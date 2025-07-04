@@ -2,7 +2,9 @@ use nom::{IResult, number::complete::u8};
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TapeColor {
+  None,
   BerryPink_TZe_MQP35,
   Black,
   Blue_TZe_5_345_5,
@@ -36,6 +38,7 @@ pub enum TapeColor {
 impl From<u8> for TapeColor {
   fn from(value: u8) -> Self {
     match value {
+      0x00 => TapeColor::None,
       0x01 => TapeColor::White,
       0x02 => TapeColor::Other,
       0x03 => TapeColor::Clear,

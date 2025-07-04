@@ -6,12 +6,14 @@ mod command;
 mod media_type;
 pub(crate) mod nom_utils;
 mod printer_stats;
+mod status_type;
 mod tape_color;
 mod text_color;
 
 pub use command::{Commands, Status};
 pub use media_type::MediaType;
 pub use printer_stats::{PrinterFlags, PrinterInfo, PrinterType};
+pub use status_type::StatusType;
 pub use tape_color::TapeColor;
 pub use text_color::TextColor;
 
@@ -27,8 +29,13 @@ pub enum Error {
   PrinterNotFound,
   #[error("Invalid tape size reported: {0}")]
   InvalidTapeSize(u8),
+  #[error("Printer status: {0:?}")]
+  Status(StatusType),
+  #[error("No tape loaded")]
+  NoTapeLoaded,
 }
 
+#[derive(Debug)]
 pub struct Printer {
   interface: PrinterInterface,
   status: Status,
@@ -37,6 +44,14 @@ pub struct Printer {
 
 struct PrinterInterface {
   interface: Interface,
+}
+
+impl std::fmt::Debug for PrinterInterface {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("PrinterInterface")
+      .field("interface", &"<usb interface>")
+      .finish()
+  }
 }
 
 impl PrinterInterface {
@@ -88,6 +103,21 @@ impl Printer {
     })
   }
 
+  pub async fn reload_status(&mut self) -> Result<Status, Error> {
+    let status = Commands::status(&self.interface).await?;
+    self.status = status.clone();
+
+    Ok(status)
+  }
+
+  pub fn ty(&self) -> PrinterType {
+    self.ty
+  }
+
+  pub fn status(&self) -> Status {
+    self.status.clone()
+  }
+
   fn flags_contains(&self, flag: PrinterFlags) -> bool {
     self.ty.info().flags.contains(flag)
   }
@@ -97,6 +127,14 @@ impl Printer {
   }
 
   pub async fn print(&self, image: image::DynamicImage) -> Result<(), Error> {
+    if self.status.media_type == MediaType::None {
+      Err(Error::NoTapeLoaded)?;
+    }
+
+    if self.status.status_type != StatusType::Ok {
+      Err(Error::Status(self.status.status_type))?;
+    }
+
     if self.flags_contains(PrinterFlags::RasterPackBits) {
       Commands::pack_bits(self).await?;
     }

@@ -7,6 +7,7 @@ use crate::{
   TapeSize,
   TextColor,
   nom_utils::{tag, tag_multi, u16, u32, zero, zero_multi},
+  status_type::StatusType,
 };
 
 fn parse(input: &[u8]) -> IResult<&[u8], Status> {
@@ -28,7 +29,7 @@ fn parse(input: &[u8]) -> IResult<&[u8], Status> {
 
   let (input, _) = zero_multi::<2>(input)?;
 
-  let (input, status_type) = u8(input)?;
+  let (input, status_type) = StatusType::parse(input)?;
   let (input, phase_type) = u8(input)?;
   let (input, phase_number) = u16(input)?;
   let (input, notification_number) = u8(input)?;
@@ -62,13 +63,14 @@ fn parse(input: &[u8]) -> IResult<&[u8], Status> {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Status {
   pub model: u8,
   pub error: u16,
   pub media_width: TapeSize,
   pub media_type: MediaType,
   pub mode: u8,
-  pub status_type: u8,
+  pub status_type: StatusType,
   pub phase_type: u8,
   pub phase_number: u16,
   pub notification_number: u8,

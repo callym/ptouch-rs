@@ -15,3 +15,15 @@ nom = "8.0.0"
 nusb = "0.1.14"
 strum = { version = "0.27.1", features = ["derive"] }
 thiserror = "2.0.12"
+
+[dependencies.serde]
+default-features = false
+features = ["derive"]
+optional = true
+version = "1.0"
+
+[features]
+serde = ["dep:serde", "enumflags2/serde"]
+
+[dev-dependencies]
+tokio = { version = "1", features = ["full", "macros"] }

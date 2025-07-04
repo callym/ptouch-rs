@@ -13,6 +13,7 @@ use d460bt::D490bt;
 use finalize::Finalize;
 use image::DynamicImage;
 use info::Info;
+use nom::Err;
 use packbits::PackBits;
 use precut::Precut;
 use raster_start::RasterStart;
@@ -26,11 +27,24 @@ impl Commands {
     printer.send(PackBits::message()).await
   }
 
-  pub(crate) async fn status(printer: &PrinterInterface) -> Result<Status, Error> {
-    let buf = printer.receive(Status::message()).await?;
-    let status = Status::from_request(buf)?;
+  async fn status_internal(printer: &PrinterInterface, attempt: i32) -> Result<Status, Error> {
+    Box::pin(async move {
+      let buf = printer.receive(Status::message()).await?;
+      let status = Status::from_request(buf);
 
-    Ok(status)
+      match status {
+        Ok(status) => Ok(status),
+        Err(Error::Nom(Err::Error(err))) if err.input.is_empty() && attempt > 0 => {
+          Commands::status_internal(printer, attempt - 1).await
+        },
+        Err(err) => Err(err)?,
+      }
+    })
+    .await
+  }
+
+  pub(crate) async fn status(printer: &PrinterInterface) -> Result<Status, Error> {
+    Commands::status_internal(printer, 10).await
   }
 
   pub async fn info(printer: &Printer, size_x: u32) -> Result<(), Error> {

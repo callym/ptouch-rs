@@ -25,6 +25,7 @@ static INFO: LazyLock<HashMap<PrinterType, PrinterInfo>> = LazyLock::new(|| {
 #[bitflags]
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PrinterFlags {
   UnsupportedRaster = (1 << 0),
   RasterPackBits = (1 << 1),
@@ -36,6 +37,7 @@ pub enum PrinterFlags {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PrinterInfo {
   pub vendor_id: u16,
   pub product_id: u16,
@@ -46,6 +48,7 @@ pub struct PrinterInfo {
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, strum::EnumIter)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PrinterType {
   PT_9200DX,
   PT_2300,

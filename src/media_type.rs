@@ -1,6 +1,7 @@
 use nom::{IResult, number::complete::u8};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum MediaType {
   None,
   Laminated,

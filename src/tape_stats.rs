@@ -7,13 +7,16 @@ use nom::{
 use crate::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TapeInfo {
   pub px: u32,
   pub margins: f32,
 }
 
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TapeSize {
+  None,
   ThreePointFive,
   Six,
   Nine,
@@ -26,6 +29,10 @@ pub enum TapeSize {
 impl TapeSize {
   pub const fn info(&self) -> TapeInfo {
     match self {
+      TapeSize::None => TapeInfo {
+        px: 0,
+        margins: 0.0
+      },
       TapeSize::ThreePointFive => TapeInfo {
         px: 24,
         margins: 0.5,
@@ -61,6 +68,7 @@ impl TapeSize {
 impl From<TapeSize> for u8 {
   fn from(val: TapeSize) -> Self {
     match val {
+      TapeSize::None => 0,
       TapeSize::ThreePointFive => 4,
       TapeSize::Six => 6,
       TapeSize::Nine => 9,
@@ -77,6 +85,7 @@ impl TryFrom<u8> for TapeSize {
 
   fn try_from(value: u8) -> Result<Self, Self::Error> {
     Ok(match value {
+      0 => Self::None,
       4 => Self::ThreePointFive,
       6 => Self::Six,
       9 => Self::Nine,
@@ -91,15 +100,15 @@ impl TryFrom<u8> for TapeSize {
 
 impl TapeSize {
   pub fn parse(input: &[u8]) -> IResult<&[u8], Self> {
-    let (input, color) = u8(input)?;
-    let color = match Self::try_from(color) {
-      Ok(color) => color,
+    let (input, size) = u8(input)?;
+    let size = match Self::try_from(size) {
+      Ok(size) => size,
       Err(e) => {
         let err = nom::error::Error::from_external_error(input, ErrorKind::Fail, e);
         Err(nom::Err::Error(err))?
       },
     };
 
-    Ok((input, color))
+    Ok((input, size))
   }
 }

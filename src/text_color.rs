@@ -1,7 +1,9 @@
 use nom::{IResult, number::complete::u8};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TextColor {
+  None,
   Black,
   Blue,
   BlueF,
@@ -18,6 +20,7 @@ pub enum TextColor {
 impl From<u8> for TextColor {
   fn from(value: u8) -> Self {
     match value {
+      0x00 => TextColor::None,
       0x01 => TextColor::White,
       0x02 => TextColor::Other,
       0x04 => TextColor::Red,
